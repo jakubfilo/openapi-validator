@@ -29,6 +29,7 @@ public class OpenApiValidatorCli {
 				String msg = e.getCode() + " - " + e.getLocation() + " - " + e.getMessage();
 				System.out.println("::error title=OpenAPI validation::" + escapeGithubMessage(msg));
 			});
+			writeGithubSummary(errors, args[0]);
 			System.exit(1);
 		}
 
@@ -42,5 +43,41 @@ public class OpenApiValidatorCli {
 				.replace("%", "%25")
 				.replace("\r", "%0D")
 				.replace("\n", "%0A");
+	}
+
+	private static void writeGithubSummary(List<ValidationError> errors, String specPath) {
+		String summaryPath = System.getenv("GITHUB_STEP_SUMMARY");
+		if (summaryPath == null || summaryPath.isBlank()) {
+			return; // Not running inside GitHub Actions
+		}
+
+		StringBuilder md = new StringBuilder();
+		md.append("## OpenAPI validation failed\n\n");
+		md.append("Spec file: `").append(specPath).append("`\n\n");
+		md.append("| Code | Location | Message |\n");
+		md.append("|------|----------|---------|\n");
+
+		for (ValidationError e : errors) {
+			md.append("| ")
+					.append(escapePipe(e.getCode())).append(" | ")
+					.append(escapePipe(e.getLocation())).append(" | ")
+					.append(escapePipe(e.getMessage())).append(" |\n");
+		}
+		md.append("\n");
+
+		try (var out = java.nio.file.Files.newBufferedWriter(
+				java.nio.file.Path.of(summaryPath),
+				java.nio.file.StandardOpenOption.CREATE,
+				java.nio.file.StandardOpenOption.APPEND
+		)) {
+			out.write(md.toString());
+		} catch (Exception ex) {
+			// Swallow or log to stderr, but don't override exit code
+			System.err.println("Failed to write GitHub summary: " + ex.getMessage());
+		}
+	}
+
+	private static String escapePipe(String s) {
+		return s.replace("|", "\\|");
 	}
 }
