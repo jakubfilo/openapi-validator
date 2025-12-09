@@ -25,10 +25,22 @@ public class OpenApiValidatorCli {
 
 		if (!errors.isEmpty()) {
 			System.err.println("OpenAPI validation failed:");
-			errors.forEach(e -> System.err.println("  - " + e));
+			errors.forEach(e -> {
+				String msg = e.getCode() + " - " + e.getLocation() + " - " + e.getMessage();
+				System.out.println("::error title=OpenAPI validation::" + escapeGithubMessage(msg));
+			});
 			System.exit(1);
 		}
 
 		System.out.println("OpenAPI validation passed.");
+	}
+
+	private static String escapeGithubMessage(String msg) {
+		// Minimal escaping for ::error command
+		// https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+		return msg
+				.replace("%", "%25")
+				.replace("\r", "%0D")
+				.replace("\n", "%0A");
 	}
 }
