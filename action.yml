@@ -22,5 +22,5 @@ runs:
   - name: Run OpenAPI validator
     shell: bash
     run: |
-      java -jar "${{ github.action_path }}/target/openapi-custom-validator-1.0.0-shaded.jar" \
+      java -jar "${{ github.action_path }}/target/openapi-validator-1.0.jar" \
         "${{ inputs.spec-path }}"
